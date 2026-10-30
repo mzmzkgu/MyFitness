@@ -116,6 +116,7 @@ function painOf(partId) {                                      // 최근 14일 �
 let cal = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
 let selDate = todayS();
 let openHist = new Set();
+let bodyView = 'front';
 
 function render() {
   const C = compute();
@@ -138,22 +139,22 @@ function render() {
       </div>
     </section>
 
-    <section class="card figs">
-      <div class="figwrap"><div class="figcap">앞면</div>${bodySVG('front', info, NAMES)}</div>
-      <div class="figwrap"><div class="figcap">뒷면</div>${bodySVG('back', info, NAMES)}</div>
+    <section class="card statusbox">
+      <div class="figcol">
+        <div class="viewtabs">${[['front', '앞면'], ['back', '뒷면']].map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div>
+        ${bodySVG(bodyView, info, NAMES)}
+      </div>
+      <div class="statcol">
+        ${PARTS.map(p => {
+          const x = C.parts[p.id];
+          return `<button class="prow" data-part="${p.id}">
+            <span class="pt"><span class="pn">${p.name}${painOf(p.id) ? `<i class="pd p${painOf(p.id)}"></i>` : ''}</span><span class="pv">${fmtPct(x.pct)}</span></span>
+            <span class="pb"><span style="width:${Math.min(x.pct ?? 0, 100)}%;background:${barColor(x.pct ?? 0)}"></span></span></button>`;
+        }).join('')}
+      </div>
       <div class="legend"><span><i style="background:${pctColor(1)}"></i>시작</span><span><i style="background:${pctColor(50)}"></i>50%</span>
         <span><i style="background:${pctColor(100)}"></i>100%</span><span><i style="background:#f5c542"></i>초과달성</span>
         <span><i class="pd p1"></i>살짝 아픔</span><span><i class="pd p2"></i>많이 아픔</span></div>
-    </section>
-
-    <section class="card parts">
-      ${PARTS.map(p => {
-        const x = C.parts[p.id];
-        return `<button class="prow" data-part="${p.id}">
-          <span class="pn">${p.name}${painOf(p.id) ? `<i class="pd p${painOf(p.id)}"></i>` : ''}</span>
-          <span class="pb"><span style="width:${Math.min(x.pct ?? 0, 100)}%;background:${barColor(x.pct ?? 0)}"></span></span>
-          <span class="pv">${fmtPct(x.pct)}</span></button>`;
-      }).join('')}
     </section>
 
     <section class="card" id="calCard">${calendarHTML()}</section>
@@ -420,6 +421,7 @@ document.addEventListener('click', ev => {
   if (t.closest('#btnOpt')) return openOptions();
   const reg = t.closest('[data-part]');
   if (reg && !dlg.contains(reg) && !reg.closest('.addex')) return openRecord({ part: reg.dataset.part });
+  const vw = t.closest('[data-view]'); if (vw) { bodyView = vw.dataset.view; return render(); }
   const nav = t.closest('[data-cal]');
   if (nav) { cal.m += +nav.dataset.cal; if (cal.m < 0) { cal.m = 11; cal.y--; } if (cal.m > 11) { cal.m = 0; cal.y++; } $('#calCard').innerHTML = calendarHTML(); return; }
   const day = t.closest('.day[data-date]');
