@@ -32,6 +32,7 @@ const ic = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</
 
 /* ---------- 유틸 ---------- */
 const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const uid = () => Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
 const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -149,9 +150,12 @@ let selDate = todayS();
 let openHist = new Set();
 let B3D = null;                                                // 3D 캐릭터(body3d.js). 못 쓰면 null → 2D SVG 그림
 let bodyView = 'front';
+const FIG_KEY = 'myfitness.fig';                               // 3D 모양 설정 (기록 데이터와 별개로 저장)
+let figStyle = localStorage.getItem(FIG_KEY) || 'mannequin';
 function useB3D() {
   if (!window.Body3D) return;
   B3D = window.Body3D; B3D.onPick = part => openRecord({ part }); bodyView = null;
+  B3D.setStyle(figStyle).then(ok => { if (!ok) figStyle = 'toon'; });   // 모델 로딩 실패 시 캐릭터로 유지
 }
 useB3D();
 window.addEventListener('body3d-ready', () => { useB3D(); render(); });
@@ -372,6 +376,9 @@ function drawOptions() {
     <div class="grab"></div>
     <div class="sheethead"><h2>옵션</h2><button type="button" class="ibtn" data-close aria-label="닫기">${ic('close')}</button></div>
 
+    ${B3D ? `<h3>3D 모양</h3>
+    <div class="seg wide">${[['mannequin', '마네킹'], ['toon', '캐릭터']].map(([v, n]) => `<button type="button" class="${v === figStyle ? 'on' : ''}" data-fig="${v}">${n}</button>`).join('')}</div>` : ''}
+
     <h3>월간 목표</h3>
     <p class="hint">종목별 분모는 <b>월 목표일수 × 회 × 세트</b>이고, 이번 달 기록이 분자로 쌓여요. 매월 1일에 0부터 다시 시작하며 지난 달 기록은 달력에서 볼 수 있어요.<br>예) 월 8일 × 10회 × 3세트 = 240 → 하루 30회 = 12.5%</p>
     <div class="grid2">
@@ -437,6 +444,12 @@ dlg.addEventListener('change', ev => {                          // 값 확정 �
 dlg.addEventListener('click', ev => {
   if (!$('#optSheet')) return;
   const t = ev.target.closest('button'); if (!t) return;
+  if (t.dataset.fig) {
+    figStyle = t.dataset.fig; localStorage.setItem(FIG_KEY, figStyle);
+    $$('[data-fig]', dlg).forEach(b => b.classList.toggle('on', b === t));
+    B3D.setStyle(figStyle).then(ok => { if (!ok) { figStyle = 'toon'; localStorage.setItem(FIG_KEY, 'toon'); $$('[data-fig]', dlg).forEach(b => b.classList.toggle('on', b.dataset.fig === 'toon')); alert('마네킹 모델을 불러오지 못했어요. 캐릭터로 표시할게요.'); } });
+    return;
+  }
   if (t.dataset.applyall !== undefined) {
     if (confirm('모든 종목의 월 목표일수/주당 일수를 위 값으로 바꿀까요?')) {
       S.exercises.forEach(e => { e.monthDays = S.settings.monthDays; e.perWeek = S.settings.perWeek; }); save(); drawOptions();
