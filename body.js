@@ -69,14 +69,14 @@ const DECOR = {
 function bodyDefs() {
   return `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
     <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/>
-      <stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
+      <stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0b2a66" stop-opacity=".10"/></linearGradient>
     <linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffdcb8"/><stop offset="1" stop-color="#f0b98d"/></linearGradient>
     <linearGradient id="suit" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#34425c"/><stop offset=".5" stop-color="#2a3650"/><stop offset="1" stop-color="#34425c"/></linearGradient>
-    <linearGradient id="shoe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9d3e3"/></linearGradient>
+      <stop offset="0" stop-color="#d9e0ea"/><stop offset=".5" stop-color="#e8edf4"/><stop offset="1" stop-color="#d9e0ea"/></linearGradient>
+    <linearGradient id="shoe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe5ee"/></linearGradient>
     <radialGradient id="aura" cx=".5" cy=".45" r=".55">
-      <stop offset="0" stop-color="#3ddc97" stop-opacity=".18"/><stop offset="1" stop-color="#3ddc97" stop-opacity="0"/></radialGradient>
+      <stop offset="0" stop-color="#3182f6" stop-opacity=".10"/><stop offset="1" stop-color="#3182f6" stop-opacity="0"/></radialGradient>
     <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs></svg>`;
@@ -111,20 +111,20 @@ function bodySVG(view, info, names) {
     const d = both(r.d);
     const lx = r.lab[0], ly = r.lab[1];
     const labX = ['abs', 'chest', 'back', 'lowback'].includes(r.part) ? 100 : lx;
-    const pain = i.pain ? `<circle class="pain p${i.pain}" cx="${lx + 9}" cy="${ly - 12}" r="3.8"/>` : '';
+    const pain = i.pain ? `<circle class="pmark p${i.pain}" cx="${lx + 9}" cy="${ly - 12}" r="3.8"/>` : '';
     return `<g class="region${i.glow ? ' over' : ''}" data-part="${r.part}" tabindex="0" role="button" aria-label="${names[r.part]}">
-      <path d="${d}" fill="${i.color}" stroke="#0b0f14" stroke-opacity=".7" stroke-width="1.1" stroke-linejoin="round" ${i.glow ? 'filter="url(#glow)"' : ''}/>
+      <path d="${d}" fill="${i.color}" stroke="#fff" stroke-opacity=".95" stroke-width="1.3" stroke-linejoin="round" ${i.glow ? 'filter="url(#glow)"' : ''}/>
       <path d="${d}" fill="url(#shine)" pointer-events="none"/>
-      <text x="${labX}" y="${ly - 2}" class="rn">${names[r.part]}</text>
-      <text x="${labX}" y="${ly + 8}" class="rp">${i.pct}</text>${pain}
+      <text x="${labX}" y="${ly - 2}" class="rn" fill="${i.ink}">${names[r.part]}</text>
+      <text x="${labX}" y="${ly + 8}" class="rp" fill="${i.ink}">${i.pct}</text>${pain}
     </g>`;
   }).join('');
   const deco = DECOR[view].map(d => `<path d="${both(d)}" class="deco"/>`).join('');
   const hands = `<circle cx="152" cy="186" r="9.5" fill="url(#skin)" stroke="#c98f66" stroke-width="1" pointer-events="none"/><circle cx="48" cy="186" r="9.5" fill="url(#skin)" stroke="#c98f66" stroke-width="1" pointer-events="none"/>`;
-  return `<svg viewBox="0 0 200 330" class="body" role="img" aria-label="${view === 'front' ? '앞면' : '뒷면'}">
+  return `<svg viewBox="30 0 140 322" class="body" role="img" aria-label="${view === 'front' ? '앞면' : '뒷면'}">
     <ellipse cx="100" cy="170" rx="100" ry="172" fill="url(#aura)" pointer-events="none"/>
-    <path d="${both(OUTLINE)}" fill="url(#suit)" stroke="#4a5b7a" stroke-width="1.6" stroke-linejoin="round"/>
-    <path d="${both(SHOE)}" fill="url(#shoe)" stroke="#8d9bb3" stroke-width="1.2" stroke-linejoin="round" pointer-events="none"/>
+    <path d="${both(OUTLINE)}" fill="url(#suit)" stroke="#b8c3d3" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="${both(SHOE)}" fill="url(#shoe)" stroke="#b8c3d3" stroke-width="1.2" stroke-linejoin="round" pointer-events="none"/>
     ${deco}${regs}${hands}${headSVG(view)}
   </svg>`;
 }

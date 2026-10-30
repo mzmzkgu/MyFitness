@@ -3,16 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0f14">
+<meta name="theme-color" content="#ffffff">
 <title>MyFitness</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="top">
-  <h1>💪 MyFitness</h1>
-  <div class="actions">
-    <button id="btnOpt">⚙️ 옵션</button>
-    <button id="btnAdd" class="primary">＋ 운동추가</button>
+  <div class="bar">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></span>
+      <h1>MyFitness</h1>
+    </div>
+    <div class="actions">
+      <button id="btnOpt" class="btn ghost"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.5 7.5 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.3-.9-2 3.4 2 1.5a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.7 1.7 1l.4 2.5h4l.4-2.5c.6-.3 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.5Z"/></svg>옵션</button>
+      <button id="btnAdd" class="btn solid"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>운동추가</button>
+    </div>
   </div>
 </header>
 <main id="app"></main>
