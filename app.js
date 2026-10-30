@@ -129,7 +129,7 @@ function pctColor(p) {
   if (p == null || p <= 0) return '#e9edf3';
   if (p > 100) return GOLD;
   const t = Math.min(p, 100) / 100;
-  return `hsl(215 ${Math.round(88 + 4 * t)}% ${Math.round(88 - 42 * t)}%)`;
+  return `hsl(215,${Math.round(88 + 4 * t)}%,${Math.round(88 - 42 * t)}%)`;
 }
 const inkOn = p => (p > 100 ? '#3b2a00' : p >= 45 ? '#fff' : p > 0 ? '#1d3b6e' : '#6b7684');
 const barColor = p => p > 100 ? GOLD : ACCENT;
@@ -147,7 +147,14 @@ function painOf(partId) {                                      // 최근 14일 �
 let cal = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
 let selDate = todayS();
 let openHist = new Set();
+let B3D = null;                                                // 3D 캐릭터(body3d.js). 못 쓰면 null → 2D SVG 그림
 let bodyView = 'front';
+function useB3D() {
+  if (!window.Body3D) return;
+  B3D = window.Body3D; B3D.onPick = part => openRecord({ part }); bodyView = null;
+}
+useB3D();
+window.addEventListener('body3d-ready', () => { useB3D(); render(); });
 
 function render() {
   const C = compute();
@@ -156,6 +163,8 @@ function render() {
     return { color: pctColor(p.pct), ink: inkOn(p.pct), pct: fmtPct(p.pct), pain: painOf(part), glow: p.pct > 100 };
   };
   const tp = C.total.pct ?? 0;
+  const infoMap = Object.fromEntries(PARTS.map(p => [p.id, info(p.id)]));
+  const views = B3D ? [['front', '앞'], ['side', '옆'], ['back', '뒤']] : [['front', '앞면'], ['back', '뒷면']];
   $('#app').innerHTML = `
     ${bodyDefs()}
     <section class="card hero">
@@ -171,9 +180,9 @@ function render() {
 
     <section class="card statusbox">
       <div class="sechead"><h2>부위별 현황</h2>
-        <div class="seg">${[['front', '앞면'], ['back', '뒷면']].map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div></div>
+        <div class="seg">${views.map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div></div>
       <div class="statgrid">
-        <div class="figcol">${bodySVG(bodyView, info, NAMES)}</div>
+        <div class="figcol">${B3D ? '<div id="fig3d"></div>' : bodySVG(bodyView === 'back' ? 'back' : 'front', info, NAMES)}</div>
         <div class="statcol">
           ${PARTS.map(p => {
             const x = C.parts[p.id], pn = painOf(p.id);
@@ -194,6 +203,7 @@ function render() {
       <div class="histbody">${historyHTML()}</div>
     </details>
     <footer>데이터는 이 기기의 브라우저에 저장됩니다</footer>`;
+  if (B3D) { $('#fig3d').replaceWith(B3D.el); B3D.update(infoMap); }   // 캔버스는 재사용 (WebGL 컨텍스트 재생성 방지)
 }
 
 /* ---------- 달력 ---------- */
@@ -462,7 +472,7 @@ document.addEventListener('click', ev => {
   if (t.closest('#btnOpt')) return openOptions();
   const reg = t.closest('[data-part]');
   if (reg && !dlg.contains(reg)) return openRecord({ part: reg.dataset.part });
-  const vw = t.closest('[data-view]'); if (vw) { bodyView = vw.dataset.view; return render(); }
+  const vw = t.closest('[data-view]'); if (vw) { bodyView = vw.dataset.view; if (B3D) B3D.setView(bodyView); return render(); }
   const nav = t.closest('[data-cal]');
   if (nav) { cal.m += +nav.dataset.cal; if (cal.m < 0) { cal.m = 11; cal.y--; } if (cal.m > 11) { cal.m = 0; cal.y++; } $('#calCard').innerHTML = calendarHTML(); return; }
   const day = t.closest('.day[data-date]');

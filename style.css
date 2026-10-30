@@ -59,7 +59,7 @@ footer{text-align:center;color:var(--mut);font-size:12px;padding:10px 0 32px}
 .seg button.on{background:#fff;color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1)}
 
 /* 신체 + 현황 */
-.statgrid{display:grid;grid-template-columns:1.2fr 1fr;gap:6px 14px;align-items:center}
+.statgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:6px 14px;align-items:center}
 .figcol{min-width:0}
 svg.body{width:100%;height:auto;display:block;user-select:none;overflow:visible}
 .region{cursor:pointer;outline:none}
@@ -179,3 +179,10 @@ input[type=date]{min-height:48px}
 .addex .btn{height:40px}
 .filebtn{cursor:pointer;flex-direction:row}
 .sheet>*{flex-shrink:0}
+
+/* 3D 캐릭터 */
+.fig3d{position:relative;width:100%;aspect-ratio:1/1.3;border-radius:18px;background:radial-gradient(120% 90% at 50% 38%,#f4f8ff 0%,#eaf1fb 60%,#e2ebf8 100%);overflow:hidden}
+.fig3d canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;outline:none}
+.fig3d canvas:active{cursor:grabbing}
+.hint3d{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:11.5px;color:var(--mut);pointer-events:none;transition:opacity .4s}
+.fig3d.touched .hint3d{opacity:0}
