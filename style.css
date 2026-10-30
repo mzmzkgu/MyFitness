@@ -31,8 +31,8 @@ footer{text-align:center;color:var(--mut);font-size:12px;padding:6px 0 24px}
 .tsub{color:var(--mut);font-size:13px;margin-top:2px}.tsub b{color:var(--tx)}
 
 /* 인체 + 스테이터스 (좌우 배치) */
-.statusbox{display:grid;grid-template-columns:1.05fr 1fr;gap:6px 10px;padding:10px}
-.figcol{min-width:0}
+.statusbox{display:grid;grid-template-columns:1.25fr 1fr;gap:6px 8px;padding:10px}
+.figcol{min-width:0;align-self:center}
 .viewtabs{display:flex;gap:4px;justify-content:center;margin-bottom:2px}
 .viewtabs button{padding:3px 12px;font-size:12px;border-radius:999px;color:var(--mut)}
 .viewtabs button.on{background:var(--ac);color:#062014;border-color:var(--ac);font-weight:700}
