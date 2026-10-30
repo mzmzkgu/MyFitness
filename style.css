@@ -59,8 +59,8 @@ footer{text-align:center;color:var(--mut);font-size:12px;padding:10px 0 32px}
 .seg button.on{background:#fff;color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1)}
 
 /* 신체 + 현황 */
-.statgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:6px 14px;align-items:center}
-.figcol{min-width:0}
+.figcol{max-width:440px;margin:4px auto 0}
+.figcol>svg.body{max-width:260px;margin:0 auto}
 svg.body{width:100%;height:auto;display:block;user-select:none;overflow:visible}
 .region{cursor:pointer;outline:none}
 .region path:first-of-type{transition:fill .4s}
@@ -71,10 +71,7 @@ svg.body{width:100%;height:auto;display:block;user-select:none;overflow:visible}
 .pmark{stroke:#fff;stroke-width:1.2;animation:pulse 1.6s infinite}
 .pmark.p1{fill:var(--orange)}.pmark.p2{fill:var(--red)}
 @keyframes pulse{50%{opacity:.35}}
-.statcol{display:flex;flex-direction:column;gap:2px;min-width:0}
-.prow{display:flex;flex-direction:column;gap:6px;padding:8px 8px;border-radius:12px;text-align:left;width:100%}
-.prow:active{background:var(--fill)}
-.pt{display:flex;justify-content:space-between;align-items:baseline}
+.pt{display:flex;align-items:center}
 .pn{font-weight:600;font-size:14px;color:var(--tx2)}
 .pv{font-weight:700;font-size:15px}.pv.gold{color:#b87d00}
 .pb{height:6px;border-radius:99px;background:var(--fill);overflow:hidden;display:block}
@@ -189,3 +186,13 @@ input[type=date]{min-height:48px}
 .load3d{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.92);color:var(--tx2);font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(25,31,40,.12);display:none;pointer-events:none}
 .fig3d.loading .load3d{display:block}
 .seg.wide{display:flex}.seg.wide button{flex:1;padding:9px 0;font-size:14px}
+
+/* 그림 아래: 앞/옆/뒤 + 부위 타일(3×3) */
+.viewseg{display:flex;justify-content:center;margin:12px 0 14px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{display:flex;flex-direction:column;gap:2px;padding:12px 12px 11px;border-radius:14px;background:#f7f8fa;text-align:left;min-width:0;transition:background .15s,transform .1s}
+.tile:active{background:var(--ac-bg);transform:scale(.97)}
+.tile .pn{font-size:13px;color:var(--tx2)}
+.tile .pv{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.tile .pb{height:5px;background:#e5e8eb}
+.fig3d{aspect-ratio:1/1.08}

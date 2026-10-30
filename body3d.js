@@ -278,7 +278,7 @@ function create() {
       }
       return zz === null ? null : [cx, cy, zz + sign * 0.07];
     };
-    const W2 = { shoulder: 0.9, chest: 1.2, abs: 1.1, back: 1.2, lowback: 1.05, arm: 0.9, leg: 1.05, calf: 0.9 };
+    const W2 = { shoulder: 0.72, chest: 0.95, abs: 0.85, back: 0.95, lowback: 0.85, arm: 0.72, leg: 0.88, calf: 0.72 };
     const specs = [], painSpecs = {};
     Object.keys(W2).forEach(part => {
       [1, -1].forEach(sign => {

@@ -183,18 +183,17 @@ function render() {
     </section>
 
     <section class="card statusbox">
-      <div class="sechead"><h2>부위별 현황</h2>
-        <div class="seg">${views.map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div></div>
-      <div class="statgrid">
-        <div class="figcol">${B3D ? '<div id="fig3d"></div>' : bodySVG(bodyView === 'back' ? 'back' : 'front', info, NAMES)}</div>
-        <div class="statcol">
-          ${PARTS.map(p => {
-            const x = C.parts[p.id], pn = painOf(p.id);
-            return `<button class="prow" data-part="${p.id}">
-              <span class="pt"><span class="pn">${p.name}${pn ? `<i class="pd p${pn}"></i>` : ''}</span><span class="pv${x.pct > 100 ? ' gold' : ''}">${fmtPct(x.pct)}</span></span>
-              <span class="pb"><span style="width:${Math.min(x.pct ?? 0, 100)}%;background:${barColor(x.pct ?? 0)}"></span></span></button>`;
-          }).join('')}
-        </div>
+      <div class="sechead"><h2>부위별 현황</h2></div>
+      <div class="figcol">${B3D ? '<div id="fig3d"></div>' : bodySVG(bodyView === 'back' ? 'back' : 'front', info, NAMES)}</div>
+      <div class="viewseg"><div class="seg">${views.map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div></div>
+      <div class="tiles">
+        ${PARTS.map(p => {
+          const x = C.parts[p.id], pn = painOf(p.id);
+          return `<button class="tile" data-part="${p.id}">
+            <span class="pt"><span class="pn">${p.name}${pn ? `<i class="pd p${pn}"></i>` : ''}</span></span>
+            <span class="pv${x.pct > 100 ? ' gold' : ''}">${fmtPct(x.pct)}</span>
+            <span class="pb"><span style="width:${Math.min(x.pct ?? 0, 100)}%;background:${barColor(x.pct ?? 0)}"></span></span></button>`;
+        }).join('')}
       </div>
       <div class="legend"><span class="lgbar"><i></i></span><span>0%</span><span class="sp"></span><span>100%</span>
         <span class="sw gold"></span><span>초과달성</span><span class="pd p1"></span><span>살짝 아픔</span><span class="pd p2"></span><span>많이 아픔</span></div>
