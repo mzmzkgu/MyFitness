@@ -91,12 +91,12 @@ function headSVG(view) {
   const head = `<ellipse cx="100" cy="40" rx="34" ry="31" fill="url(#skin)" stroke="#c98f66" stroke-width="1.2"/>`;
   if (view === 'back') {
     return `${neck}${ears}${head}
-      <path d="M66,40 C64,6 136,6 134,40 C135,56 122,69 100,69 C78,69 65,56 66,40 Z" fill="${HAIR}"/>
-      <path d="M80,22 C90,14 108,14 118,22" fill="none" stroke="#6b4c39" stroke-width="3" stroke-linecap="round"/>`;
+      <path d="M65,40 C58,-8 142,-8 135,40 C135,56 122,69 100,69 C78,69 65,56 66,40 Z" fill="${HAIR}"/>
+      <path d="M80,20 C90,11 110,11 120,20" fill="none" stroke="#6b4c39" stroke-width="3" stroke-linecap="round"/>`;
   }
   return `${neck}${ears}${head}
-    <path d="M66,38 C63,8 137,8 134,38 C128,28 118,22 108,20 C98,26 82,26 72,32 C70,34 68,36 66,38 Z" fill="${HAIR}"/>
-    <path d="M78,17 C88,11 106,11 118,17" fill="none" stroke="#6b4c39" stroke-width="3" stroke-linecap="round"/>
+    <path d="M65,38 C58,-8 142,-8 135,38 C128,28 118,22 108,20 C98,26 82,26 72,32 C70,34 68,36 66,38 Z" fill="${HAIR}"/>
+    <path d="M78,17 C88,9 110,9 122,17" fill="none" stroke="#6b4c39" stroke-width="3" stroke-linecap="round"/>
     <ellipse cx="86" cy="45" rx="3.6" ry="4.6" fill="#2a2118"/><ellipse cx="114" cy="45" rx="3.6" ry="4.6" fill="#2a2118"/>
     <circle cx="87.4" cy="43.2" r="1.3" fill="#fff"/><circle cx="115.4" cy="43.2" r="1.3" fill="#fff"/>
     <circle cx="76" cy="55" r="5.2" fill="#ff8fa0" opacity=".5"/><circle cx="124" cy="55" r="5.2" fill="#ff8fa0" opacity=".5"/>
