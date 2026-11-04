@@ -190,3 +190,8 @@ input[type=date]{min-height:48px}
 .fig3d.failed .fail3d{display:block}
 .fig3d.failed .load3d{display:none}
 .viewseg[hidden]{display:none}
+
+/* 앱 모드(주소창 없음): 노치/상태바·홈 인디케이터 영역 피하기 */
+.top{padding-top:env(safe-area-inset-top)}
+footer{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
+@media (display-mode:standalone){html{overscroll-behavior-y:contain}}

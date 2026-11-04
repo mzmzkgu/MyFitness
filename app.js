@@ -30,6 +30,12 @@ const I = {
 };
 const ic = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
 
+/* ---------- PWA 설치 상태 ---------- */
+let installEvt = null;                                          // 안드로이드 크롬: 설치 프롬프트
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+window.addEventListener('appinstalled', () => { installEvt = null; });
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
 /* ---------- 유틸 ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -419,6 +425,11 @@ function drawOptions() {
           <button type="button" class="btn tint sm" data-addex>추가</button></div></div>`;
     }).join('')}
 
+    <h3>앱 설치</h3>
+    ${isStandalone() ? '<p class="hint">홈 화면에 설치된 앱으로 실행 중이에요.</p>'
+      : installEvt ? '<button type="button" class="btn tint" data-install>홈 화면에 앱 설치</button><p class="hint">설치하면 주소창 없이 앱처럼 열리고, 인터넷이 없어도 기록을 볼 수 있어요.</p>'
+      : '<p class="hint">브라우저 메뉴(⋮) → <b>홈 화면에 추가</b> 또는 <b>앱 설치</b>를 눌러주세요.<br>iPhone은 공유 버튼 → <b>홈 화면에 추가</b>예요.</p>'}
+
     <h3>데이터</h3>
     <div class="btns wrap"><button type="button" class="btn tint sm" data-export>${ic('down2')}내보내기</button>
       <label class="btn tint sm filebtn">${ic('up2')}가져오기<input type="file" accept="application/json" data-import hidden></label>
@@ -458,6 +469,11 @@ dlg.addEventListener('change', ev => {                          // 값 확정 �
 dlg.addEventListener('click', ev => {
   if (!$('#optSheet')) return;
   const t = ev.target.closest('button'); if (!t) return;
+  if (t.dataset.install !== undefined && installEvt) {
+    installEvt.prompt();
+    installEvt.userChoice.finally(() => { installEvt = null; drawOptions(); });
+    return;
+  }
   if (t.dataset.applyall !== undefined) {
     if (confirm('모든 종목의 월 목표일수/주당 일수를 위 값으로 바꿀까요?')) {
       S.exercises.forEach(e => { e.monthDays = S.settings.monthDays; e.perWeek = S.settings.perWeek; }); save(); drawOptions();
@@ -509,3 +525,6 @@ document.addEventListener('toggle', ev => {
 }, true);
 
 render();
+
+/* ---------- PWA: 서비스 워커 등록 / 설치 ---------- */
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
