@@ -60,18 +60,7 @@ footer{text-align:center;color:var(--mut);font-size:12px;padding:10px 0 32px}
 
 /* 신체 + 현황 */
 .figcol{max-width:440px;margin:4px auto 0}
-.figcol>svg.body{max-width:260px;margin:0 auto}
-svg.body{width:100%;height:auto;display:block;user-select:none;overflow:visible}
-.region{cursor:pointer;outline:none}
-.region path:first-of-type{transition:fill .4s}
-.region:hover path:first-of-type,.region:focus-visible path:first-of-type{stroke:var(--ac-d);stroke-width:1.8}
-.region text{pointer-events:none;text-anchor:middle}
-.rn{font-size:7.5px;font-weight:600}.rp{font-size:10.5px;font-weight:800}
-.deco{fill:none;stroke:rgba(20,40,80,.12);stroke-width:.9;stroke-linecap:round;pointer-events:none}
-.pmark{stroke:#fff;stroke-width:1.2;animation:pulse 1.6s infinite}
-.pmark.p1{fill:var(--orange)}.pmark.p2{fill:var(--red)}
-@keyframes pulse{50%{opacity:.35}}
-.pt{display:flex;align-items:center}
+.figcol>.pt{display:flex;align-items:center}
 .pn{font-weight:600;font-size:14px;color:var(--tx2)}
 .pv{font-weight:700;font-size:15px}.pv.gold{color:#b87d00}
 .pb{height:6px;border-radius:99px;background:var(--fill);overflow:hidden;display:block}
@@ -106,7 +95,7 @@ svg.body{width:100%;height:auto;display:block;user-select:none;overflow:visible}
 .dshead b{font-size:16px;font-weight:700}
 .logline{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f2f4f6}
 .logline:last-child{border:0}
-.tag{flex:none;font-size:12px;font-weight:600;background:var(--fill);color:var(--tx2);border-radius:7px;padding:2px 8px}
+.tag{flex:0 0 58px;box-sizing:border-box;text-align:center;font-size:12px;font-weight:600;background:var(--fill);color:var(--tx2);border-radius:7px;padding:2px 0}
 .ln{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.35}
 .ln b{font-size:15px;font-weight:600}.ln em{font-style:normal;color:var(--mut);font-size:13px}
 .logline .pd{margin:0}
@@ -185,7 +174,6 @@ input[type=date]{min-height:48px}
 .fig3d.touched .hint3d{opacity:0}
 .load3d{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:6px 12px;border-radius:99px;background:rgba(255,255,255,.92);color:var(--tx2);font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(25,31,40,.12);display:none;pointer-events:none}
 .fig3d.loading .load3d{display:block}
-.seg.wide{display:flex}.seg.wide button{flex:1;padding:9px 0;font-size:14px}
 
 /* 그림 아래: 앞/옆/뒤 + 부위 타일(3×3) */
 .viewseg{display:flex;justify-content:center;margin:12px 0 14px}
@@ -196,3 +184,9 @@ input[type=date]{min-height:48px}
 .tile .pv{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
 .tile .pb{height:5px;background:#e5e8eb}
 .fig3d{aspect-ratio:1/1.08}
+
+.fig3d.loading .hint3d,.fig3d.failed .hint3d{display:none}
+.fail3d{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--mut);font-size:13px;font-weight:600;display:none}
+.fig3d.failed .fail3d{display:block}
+.fig3d.failed .load3d{display:none}
+.viewseg[hidden]{display:none}

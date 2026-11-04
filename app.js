@@ -53,7 +53,7 @@ function seed() {
   const vsq = ex('leg', '퓨어 브이스쿼트', '회', 10, 3);
   const lat = ex('back', '랫풀다운', '회', 15, 3);
   const run = ex('cardio', '런닝', '분', 20, 1);
-  const lg = (exId, date, weight, reps, sets, memo = '') => ({ id: uid(), date, exId, weight, reps, sets, pain: 0, memo });
+  const lg = (exId, date, weight, reps, sets, memo = '', dist = 0) => ({ id: uid(), date, exId, weight, reps, sets, pain: 0, memo, dist });
   return {
     v: 2,
     settings: { monthDays: 8, perWeek: 2 },
@@ -62,7 +62,7 @@ function seed() {
       lg(pec.id, '2026-10-22', 15, 10, 3), lg(pec.id, '2026-10-29', 15, 10, 3),
       lg(vsq.id, '2026-10-22', 20, 10, 3), lg(vsq.id, '2026-10-29', 20, 10, 4),
       lg(lat.id, '2026-10-29', 20, 15, 3),
-      lg(run.id, '2026-10-22', 0, 20, 1, '2.75km'), lg(run.id, '2026-10-29', 0, 15, 1, '2km'),
+      lg(run.id, '2026-10-22', 0, 20, 1, '', 2.75), lg(run.id, '2026-10-29', 0, 15, 1, '', 2),
     ],
   };
 }
@@ -74,6 +74,13 @@ function migrate(o) {                                          // v1(누적 목�
     o.v = 2;
   }
   o.settings = { monthDays: 8, perWeek: 2, ...o.settings };
+  // 런닝(분 단위) 기록: 예전에 메모에 적던 '2.5' / '2.75km' → 거리(km) 필드로 이관
+  const isMin = id => o.exercises.find(e => e.id === id)?.unit === '분';
+  o.logs.forEach(l => {
+    if (!isMin(l.exId) || l.dist != null) return;
+    const m = /^\s*(\d+(?:\.\d+)?)\s*(?:km)?\s*$/i.exec(l.memo || '');
+    if (m) { l.dist = +m[1]; l.memo = ''; } else l.dist = 0;
+  });
   return o;
 }
 function load() {
@@ -91,6 +98,9 @@ const exOf = id => S.exercises.find(e => e.id === id);
 const unitOf = e => e ? e.unit : '회';
 const target = e => e.monthDays * e.reps * e.sets;            // 분모: 월 목표일 × 회 × 세트
 const amount = l => l.reps * l.sets;                          // 분자: 기록 1건 = 회 × 세트
+const kmh = (km, min) => km > 0 && min > 0 ? km / (min / 60) : 0;
+const fmtKm = n => +(+n).toFixed(2) + 'km';
+const fmtSpeed = v => +v.toFixed(1) + 'km/h';
 
 function weekRange(dateStr) {                                  // 일~토
   const d = parseD(dateStr); d.setDate(d.getDate() - d.getDay());
@@ -100,14 +110,17 @@ function weekRange(dateStr) {                                  // 일~토
 // ym: 'YYYY-MM' — 해당 월의 기록만 분자로 집계 (매월 1일 0부터 다시 시작)
 function compute(ym = curYM()) {
   const monthLogs = S.logs.filter(l => l.date.startsWith(ym));
-  const done = {};
-  monthLogs.forEach(l => { done[l.exId] = (done[l.exId] || 0) + amount(l); });
+  const done = {}, dist = {}, distMin = {};
+  monthLogs.forEach(l => {
+    done[l.exId] = (done[l.exId] || 0) + amount(l);
+    if (l.dist > 0) { dist[l.exId] = (dist[l.exId] || 0) + l.dist; distMin[l.exId] = (distMin[l.exId] || 0) + l.reps; }
+  });
   const [w0, w1] = weekRange(todayS());
   const week = {};
   S.logs.forEach(l => { if (l.date >= w0 && l.date <= w1) (week[l.exId] ||= new Set()).add(l.date); });
   const exs = S.exercises.map(e => {
     const t = target(e), d = done[e.id] || 0;
-    return { e, t, d, pct: t > 0 ? d / t * 100 : null, weekDays: week[e.id]?.size || 0 };
+    return { e, t, d, pct: t > 0 ? d / t * 100 : null, weekDays: week[e.id]?.size || 0, dist: dist[e.id] || 0, distMin: distMin[e.id] || 0 };
   });
   const sum = list => {
     const t = list.reduce((a, x) => a + x.t, 0), d = list.reduce((a, x) => a + x.d, 0);
@@ -148,17 +161,16 @@ function painOf(partId) {                                      // 최근 14일 �
 let cal = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
 let selDate = todayS();
 let openHist = new Set();
-let B3D = null;                                                // 3D 캐릭터(body3d.js). 못 쓰면 null → 2D SVG 그림
-let bodyView = 'front';
-const FIG_KEY = 'myfitness.fig';                               // 3D 모양 설정 (기록 데이터와 별개로 저장)
-let figStyle = localStorage.getItem(FIG_KEY) || 'mannequin';
+let B3D = null, figFailed = false;                             // 3D 마네킹(body3d.js). 못 불러오면 부위 타일만 표시
+let bodyView = null;
+localStorage.removeItem('myfitness.fig');                       // (이전 버전의 3D 모양 설정 정리)
 function useB3D() {
   if (!window.Body3D) return;
-  B3D = window.Body3D; B3D.onPick = part => openRecord({ part }); bodyView = null;
-  B3D.setStyle(figStyle).then(ok => { if (!ok) figStyle = 'toon'; });   // 모델 로딩 실패 시 캐릭터로 유지
+  B3D = window.Body3D; B3D.onPick = part => openRecord({ part });
 }
 useB3D();
 window.addEventListener('body3d-ready', () => { useB3D(); render(); });
+window.addEventListener('body3d-failed', () => { figFailed = true; render(); });
 
 function render() {
   const C = compute();
@@ -168,9 +180,8 @@ function render() {
   };
   const tp = C.total.pct ?? 0;
   const infoMap = Object.fromEntries(PARTS.map(p => [p.id, info(p.id)]));
-  const views = B3D ? [['front', '앞'], ['side', '옆'], ['back', '뒤']] : [['front', '앞면'], ['back', '뒷면']];
+  const views = [['front', '앞'], ['side', '옆'], ['back', '뒤']];
   $('#app').innerHTML = `
-    ${bodyDefs()}
     <section class="card hero">
       <div class="herotop"><span class="cap">${monthOf(C.ym)}월 운동 진행도</span><span class="cap">매월 1일 초기화</span></div>
       <div class="bignum${tp > 100 ? ' gold' : ''}">${C.total.pct == null ? '–' : fmtPct(C.total.pct).replace('%', '')}<span>%</span></div>
@@ -184,8 +195,8 @@ function render() {
 
     <section class="card statusbox">
       <div class="sechead"><h2>부위별 현황</h2></div>
-      <div class="figcol">${B3D ? '<div id="fig3d"></div>' : bodySVG(bodyView === 'back' ? 'back' : 'front', info, NAMES)}</div>
-      <div class="viewseg"><div class="seg">${views.map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div></div>
+      <div class="figcol"><div id="fig3d" class="fig3d${figFailed ? ' failed' : ' loading'}"><div class="load3d">모델 불러오는 중…</div><div class="fail3d">3D 모델을 불러오지 못했어요</div></div></div>
+      ${B3D && !figFailed ? '<div class="viewseg">' : '<div class="viewseg" hidden>'}<div class="seg">${views.map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div></div>
       <div class="tiles">
         ${PARTS.map(p => {
           const x = C.parts[p.id], pn = painOf(p.id);
@@ -241,7 +252,7 @@ function calendarHTML() {
 }
 function logLine(l) {
   const e = exOf(l.exId), u = unitOf(e), p = PAIN[l.pain || 0];
-  const main = u === '분' ? `${l.reps}분` : `${l.weight ? l.weight + 'kg · ' : ''}${l.reps}회 × ${l.sets}세트`;
+  const main = u === '분' ? `${l.reps}분${l.dist > 0 ? ` · ${fmtKm(l.dist)} · ${fmtSpeed(kmh(l.dist, l.reps))}` : ''}` : `${l.weight ? l.weight + 'kg · ' : ''}${l.reps}회 × ${l.sets}세트`;
   return `<div class="logline"><span class="tag">${NAMES[e?.part] || '?'}</span>
     <span class="ln"><b>${esc(e?.name || '(삭제된 종목)')}</b><em>${main}${l.memo ? ` · ${esc(l.memo)}` : ''}</em></span>
     <i class="pd p${l.pain || 0}" title="${p.t}"></i><button class="link" data-edit="${l.id}">수정</button></div>`;
@@ -275,7 +286,7 @@ function openRecord({ part, date, editId } = {}) {
     part: l ? (e0?.part || 'chest') : (part || PARTS.find(p => S.exercises.some(e => e.part === p.id))?.id || 'chest'),
     exId: l?.exId || null,
     date: l?.date || date || todayS(),
-    weight: l ? l.weight : '', reps: l ? l.reps : '', sets: l ? l.sets : '',
+    weight: l ? l.weight : '', reps: l ? l.reps : '', sets: l ? l.sets : '', dist: l?.dist > 0 ? l.dist : '',
     pain: l?.pain || 0, memo: l?.memo || '',
   };
   recPickDefaults(!l);
@@ -308,7 +319,7 @@ function drawRecord() {
       <div class="pshead"><span class="cap">${monthOf(ym)}월 ${NAMES[rec.part]} 달성률</span><b class="big">${fmtPct(P.pct)}</b></div>
       ${P.list.map(x => `<div class="exrow"><span class="en">${esc(x.e.name)}</span><span class="ev">${fmtPct(x.pct)}</span>
         <span class="pb"><span style="width:${Math.min(x.pct ?? 0, 100)}%;background:${barColor(x.pct ?? 0)}"></span></span>
-        <small>${fmtN(x.d)} / ${fmtN(x.t)}${x.e.unit} · 이번 주 ${x.weekDays}/${x.e.perWeek}일</small></div>`).join('') || '<p class="empty">이 부위에 등록된 종목이 없어요.<br>옵션에서 종목을 추가해주세요.</p>'}
+        <small>${fmtN(x.d)} / ${fmtN(x.t)}${x.e.unit} · 이번 주 ${x.weekDays}/${x.e.perWeek}일${x.dist > 0 ? ` · ${fmtKm(x.dist)} · 평균 ${fmtSpeed(kmh(x.dist, x.distMin))}` : ''}</small></div>`).join('') || '<p class="empty">이 부위에 등록된 종목이 없어요.<br>옵션에서 종목을 추가해주세요.</p>'}
     </div>
 
     ${list.length ? `
@@ -317,11 +328,12 @@ function drawRecord() {
     <div class="grid3">
       ${u === '분' ? '' : `<label>무게(kg)<input type="number" name="weight" inputmode="decimal" step="0.5" min="0" value="${rec.weight}" placeholder="맨몸 0"></label>`}
       <label>${u === '분' ? '시간(분)' : '세트당 횟수'}<input type="number" name="reps" inputmode="decimal" min="0.1" step="any" value="${rec.reps}" required></label>
-      ${u === '분' ? '' : `<label>세트 수<input type="number" name="sets" inputmode="numeric" min="1" step="1" value="${rec.sets}" required></label>`}
+      ${u === '분' ? `<label>거리(km)<input type="number" name="dist" inputmode="decimal" min="0" step="any" value="${rec.dist}" placeholder="선택 입력"></label>` : `<label>세트 수<input type="number" name="sets" inputmode="numeric" min="1" step="1" value="${rec.sets}" required></label>`}
     </div>
+    ${u === '분' ? `<p class="hint" id="speedHint">${speedHint(rec.reps, rec.dist)}</p>` : ''}
     <div class="lbl">운동 후 느낌</div>
     <div class="pains">${PAIN.map(p => `<label class="pain"><input type="radio" name="pain" value="${p.v}" ${p.v === rec.pain ? 'checked' : ''}><span style="--c:${p.c}"><i></i>${p.t}</span></label>`).join('')}</div>
-    <label>메모<input type="text" name="memo" value="${esc(rec.memo)}" placeholder="${u === '분' ? '예: 2.75km' : '선택 입력'}"></label>
+    <label>메모<input type="text" name="memo" value="${esc(rec.memo)}" placeholder="선택 입력"></label>
     <div class="btns">${rec.editId ? '<button type="button" class="btn danger" data-del>삭제</button>' : ''}<button type="submit" class="btn solid lg">${rec.editId ? '저장' : '기록하기'}</button></div>` : ''}
   </form>`;
 }
@@ -332,10 +344,16 @@ dlg.addEventListener('change', ev => {
   if (n === 'exId') { syncRec(); rec.exId = ev.target.value; recPickDefaults(!rec.editId); drawRecord(); }
   if (n === 'date') { syncRec(); drawRecord(); }
 });
+const speedHint = (min, km) => num(km) > 0 && num(min) > 0 ? `평균 속도 <b>${fmtSpeed(kmh(num(km), num(min)))}</b> · 페이스 ${fmtPace(num(min) / num(km))}` : '거리를 입력하면 평균 속도(km/h)를 계산해요';
+const fmtPace = m => `${Math.floor(m)}'${String(Math.round((m % 1) * 60)).padStart(2, '0')}"/km`;
+dlg.addEventListener('input', ev => {                           // 런닝: 입력 중 평균 속도 실시간 표시
+  const f = $('#recForm'); if (!f || !f.contains(ev.target) || !['reps', 'dist'].includes(ev.target.name)) return;
+  const h = $('#speedHint'); if (h) h.innerHTML = speedHint(f.elements.reps?.value, f.elements.dist?.value);
+});
 function syncRec() {                                            // 폼 → rec
   const f = $('#recForm'); if (!f) return;
   const fd = new FormData(f);
-  ['date', 'weight', 'reps', 'sets', 'memo'].forEach(k => { if (fd.has(k)) rec[k] = fd.get(k); });
+  ['date', 'weight', 'reps', 'sets', 'dist', 'memo'].forEach(k => { if (fd.has(k)) rec[k] = fd.get(k); });
   if (fd.has('pain')) rec.pain = +fd.get('pain');
 }
 dlg.addEventListener('click', ev => {
@@ -353,7 +371,7 @@ dlg.addEventListener('submit', ev => {
   const u = unitOf(e);
   const row = {
     id: rec.editId || uid(), date: rec.date, exId: rec.exId,
-    weight: u === '분' ? 0 : num(rec.weight), reps: num(rec.reps), sets: u === '분' ? 1 : Math.max(1, Math.round(num(rec.sets, 1))),
+    weight: u === '분' ? 0 : num(rec.weight), dist: u === '분' ? Math.max(0, num(rec.dist)) : 0, reps: num(rec.reps), sets: u === '분' ? 1 : Math.max(1, Math.round(num(rec.sets, 1))),
     pain: rec.pain, memo: String(rec.memo || '').trim(),
   };
   if (!row.date || row.reps <= 0) return ev.preventDefault();
@@ -374,9 +392,6 @@ function drawOptions() {
   dlg.innerHTML = `<div class="sheet" id="optSheet">
     <div class="grab"></div>
     <div class="sheethead"><h2>옵션</h2><button type="button" class="ibtn" data-close aria-label="닫기">${ic('close')}</button></div>
-
-    ${B3D ? `<h3>3D 모양</h3>
-    <div class="seg wide">${[['mannequin', '마네킹'], ['toon', '캐릭터']].map(([v, n]) => `<button type="button" class="${v === figStyle ? 'on' : ''}" data-fig="${v}">${n}</button>`).join('')}</div>` : ''}
 
     <h3>월간 목표</h3>
     <p class="hint">종목별 분모는 <b>월 목표일수 × 회 × 세트</b>이고, 이번 달 기록이 분자로 쌓여요. 매월 1일에 0부터 다시 시작하며 지난 달 기록은 달력에서 볼 수 있어요.<br>예) 월 8일 × 10회 × 3세트 = 240 → 하루 30회 = 12.5%</p>
@@ -443,12 +458,6 @@ dlg.addEventListener('change', ev => {                          // 값 확정 �
 dlg.addEventListener('click', ev => {
   if (!$('#optSheet')) return;
   const t = ev.target.closest('button'); if (!t) return;
-  if (t.dataset.fig) {
-    figStyle = t.dataset.fig; localStorage.setItem(FIG_KEY, figStyle);
-    $$('[data-fig]', dlg).forEach(b => b.classList.toggle('on', b === t));
-    B3D.setStyle(figStyle).then(ok => { if (!ok) { figStyle = 'toon'; localStorage.setItem(FIG_KEY, 'toon'); $$('[data-fig]', dlg).forEach(b => b.classList.toggle('on', b.dataset.fig === 'toon')); alert('마네킹 모델을 불러오지 못했어요. 캐릭터로 표시할게요.'); } });
-    return;
-  }
   if (t.dataset.applyall !== undefined) {
     if (confirm('모든 종목의 월 목표일수/주당 일수를 위 값으로 바꿀까요?')) {
       S.exercises.forEach(e => { e.monthDays = S.settings.monthDays; e.perWeek = S.settings.perWeek; }); save(); drawOptions();

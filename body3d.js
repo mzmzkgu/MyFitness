@@ -1,7 +1,6 @@
-// 3D 인체 (Three.js). 두 가지 모양을 지원한다.
-//  - toon: 기본 도형을 조립한 2.5등신 캐릭터
-//  - mannequin: 데생 인형 스타일의 인체 모델(glTF, three.js 예제의 Mixamo X Bot) — 뼈대/위치로 부위를 자동 분류해 색을 입힌다
-// 부위마다 진행률 색을 입히고, 탭하면 onPick(part)가 호출된다. WebGL 실패 시 window.Body3D = null → 2D(SVG) 그림으로 대체.
+// 3D 마네킹 (Three.js). 데생 인형 스타일의 인체 모델(glTF, three.js 예제의 Mixamo X Bot)을 불러와
+// 뼈대/위치로 부위를 자동 분류해 진행률 색을 입히고, 탭하면 onPick(part)가 호출된다.
+// WebGL 실패 시 'body3d-failed' 이벤트 (앱은 부위 타일만 보여준다).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -26,7 +25,7 @@ function create() {
   const el = document.createElement('div');
   el.className = 'fig3d';
   el.appendChild(renderer.domElement);
-  el.insertAdjacentHTML('beforeend', '<div class="hint3d">드래그해서 돌려보세요</div><div class="load3d">모델 불러오는 중…</div>');
+  el.insertAdjacentHTML('beforeend', '<div class="hint3d">드래그해서 돌려보세요</div><div class="load3d">모델 불러오는 중…</div><div class="fail3d">3D 모델을 불러오지 못했어요</div>');
 
   const scene = new THREE.Scene();
   scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
@@ -48,14 +47,6 @@ function create() {
   /* ---------- 재질 ---------- */
   const phys = (color, o = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.5, clearcoat: 0.25, clearcoatRoughness: 0.45, ...o });
   const M = {
-    skin: phys('#f6c7a0', { roughness: 0.7, clearcoat: 0.05 }),
-    suit: phys('#2e3b55', { roughness: 0.55, clearcoat: 0.35 }),
-    hair: phys('#4a3426', { roughness: 0.75, clearcoat: 0.1 }),
-    shoe: phys('#ffffff', { roughness: 0.35, clearcoat: 0.6 }),
-    eye: phys('#241b14', { roughness: 0.25, clearcoat: 0.8 }),
-    white: new THREE.MeshBasicMaterial({ color: '#ffffff' }),
-    cheek: new THREE.MeshBasicMaterial({ color: '#ff8fa0', transparent: true, opacity: 0.55 }),
-    mouth: new THREE.MeshBasicMaterial({ color: '#8a3d33' }),
     mannBase: phys('#a9b4c6', { roughness: 0.5, clearcoat: 0.45 }),
     mannJoint: phys('#3a4250', { roughness: 0.45, clearcoat: 0.3 }),
   };
@@ -94,67 +85,7 @@ function create() {
   }
   const CARDIO = { part: 'cardio', pos: [-1.35, 5.0, 0], w: 1.2, pill: true, nz: 0 };
 
-  /* ---------- 리그 1: 귀여운 캐릭터 (도형 조립) ---------- */
-  function buildToon() {
-    const group = new THREE.Group(); scene.add(group);
-    const meshes = [];                                // 레이캐스트 대상 (가림 판정까지 모든 메시)
-    function put(geo, mat, x, y, z, { s = [1, 1, 1], r = [0, 0, 0], part } = {}) {
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set(x, y, z); m.scale.set(...s); m.rotation.set(...r);
-      if (part) m.userData.part = part;
-      group.add(m); meshes.push(m); return m;
-    }
-    const sph = (r, w = 40, h = 28) => new THREE.SphereGeometry(r, w, h);
-    const cap = (r, len) => new THREE.CapsuleGeometry(r, len, 10, 28);
-    // 타원체 표면에 얹는 판(타일). y0~y1 구간, phi(방위) 중심±폭. 앞=π/2, 뒤=3π/2
-    function patch(part, cy, rx, ry, rz, y0, y1, phiC, phiH) {
-      const t0 = Math.acos(Math.min(1, (y1 - cy) / ry)), t1 = Math.acos(Math.max(-1, (y0 - cy) / ry));
-      const g = new THREE.SphereGeometry(1, 40, 24, phiC - phiH, 2 * phiH, t0, t1 - t0);
-      const k = 1.03;
-      return put(g, region[part], 0, cy, 0, { s: [rx * k, ry * k, rz * k], part });
-    }
-    const F = Math.PI / 2, B = Math.PI * 1.5;
-    put(sph(1, 48, 32), M.suit, 0, 2.55, 0, { s: [0.75, 0.85, 0.5] });
-    put(sph(1), M.suit, 0, 1.8, 0, { s: [0.7, 0.4, 0.48] });
-    patch('chest', 2.55, 0.75, 0.85, 0.5, 2.78, 3.28, F, 1.0);
-    patch('abs', 2.55, 0.75, 0.85, 0.5, 1.95, 2.7, F, 0.85);
-    patch('back', 2.55, 0.75, 0.85, 0.5, 2.6, 3.3, B, 1.15);
-    patch('lowback', 2.55, 0.75, 0.85, 0.5, 1.9, 2.5, B, 0.95);
-    [-1, 1].forEach(sx => {
-      put(cap(0.3, 0.35), region.leg, sx * 0.34, 1.25, 0, { part: 'leg' });
-      put(sph(0.33), region.leg, sx * 0.3, 1.68, -0.18, { s: [1, 1, 0.92], part: 'leg' });
-      put(cap(0.24, 0.25), region.calf, sx * 0.34, 0.55, 0.02, { part: 'calf' });
-      put(sph(0.3), M.shoe, sx * 0.34, 0.17, 0.12, { s: [1, 0.6, 1.55] });
-      put(sph(0.38), region.shoulder, sx * 0.95, 3.1, 0, { part: 'shoulder' });
-      put(cap(0.26, 0.3), region.arm, sx * 1.07, 2.55, 0, { r: [0, 0, sx * 0.07], part: 'arm' });
-      put(cap(0.22, 0.3), region.arm, sx * 1.12, 1.75, 0.04, { part: 'arm' });
-      put(sph(0.27), M.skin, sx * 1.14, 1.27, 0.05);
-    });
-    put(new THREE.CylinderGeometry(0.22, 0.26, 0.4, 24), M.skin, 0, 3.5, 0);
-    put(sph(0.88, 56, 40), M.skin, 0, 4.35, 0, { s: [1, 0.96, 0.97] });
-    [-1, 1].forEach(sx => put(sph(0.17, 20, 16), M.skin, sx * 0.87, 4.28, 0, { s: [0.6, 1, 1] }));
-    const hairCap = (th, phi0, phiLen, r) => put(new THREE.SphereGeometry(r, 48, 32, phi0, phiLen, 0, th), M.hair, 0, 4.35, 0, { s: [1, 0.96, 0.97] });
-    hairCap(1.0, 0, Math.PI * 2, 0.915);
-    hairCap(1.95, Math.PI - 0.5, Math.PI + 1.0, 0.905);
-    [-1, 1].forEach(sx => {
-      put(sph(0.105, 20, 16), M.eye, sx * 0.3, 4.3, 0.8, { s: [0.85, 1.2, 0.6] });
-      put(sph(0.035, 10, 8), M.white, sx * 0.3 + 0.025, 4.35, 0.865);
-      put(sph(0.16, 20, 14), M.cheek, sx * 0.52, 4.07, 0.64, { s: [1, 0.7, 0.35], r: [0, sx * 0.55, 0] });
-    });
-    put(new THREE.TorusGeometry(0.16, 0.03, 10, 28, Math.PI), M.mouth, 0, 4.1, 0.845, { r: [0, 0, Math.PI] });
-
-    const lab = (part, x, y, z, w) => ({ part, pos: [x, y, z], w, nz: Math.sign(z) });
-    const labels = makeLabels([
-      lab('chest', 0, 3.02, 0.62, 1.15), lab('abs', 0, 2.3, 0.58, 1.15), lab('back', 0, 3.0, -0.62, 1.15), lab('lowback', 0, 2.2, -0.58, 1.05),
-      lab('shoulder', 1.05, 3.28, 0.34, 0.85), lab('shoulder', 1.05, 3.28, -0.34, 0.85),
-      lab('arm', 1.1, 2.3, 0.3, 0.85), lab('arm', 1.1, 2.3, -0.3, 0.85),
-      lab('leg', 0.34, 1.3, 0.34, 0.95), lab('leg', 0.34, 1.0, -0.32, 0.95),
-      lab('calf', 0.34, 0.58, 0.29, 0.85), lab('calf', 0.34, 0.58, -0.25, 0.85), CARDIO,
-    ], { shoulder: [1.3, 3.5, 0.2], chest: [0.5, 3.2, 0.55], abs: [0.4, 2.1, 0.55], back: [0.5, 3.2, -0.55], lowback: [0.4, 2.0, -0.5], arm: [1.3, 2.6, 0.15], leg: [0.55, 1.4, 0.3], calf: [0.55, 0.7, 0.2] });
-    return { group, labels, pickList: () => meshes.filter(m => m.visible), partOf: h => h.object.userData.part || null };
-  }
-
-  /* ---------- 리그 2: 마네킹 (glTF, 뼈대 기반 부위 분류) ---------- */
+  /* ---------- 마네킹 (glTF, 뼈대 기반 부위 분류) ---------- */
   const boneGroup = name => {
     const n = name.replace(/^mixamorig:?/, '').replace(/^(Left|Right)/, '');
     if (n === 'Hips') return 'hips';
@@ -299,9 +230,8 @@ function create() {
     };
   }
 
-  /* ---------- 리그 관리 / 상태 ---------- */
-  const rigs = { toon: buildToon(), mannequin: null };
-  let style = 'toon', lastMap = null, loading = null;
+  /* ---------- 상태 ---------- */
+  let rig = null, lastMap = null, tweenTo = null;
   const disc = new THREE.Mesh(new THREE.CircleGeometry(2.1, 72), new THREE.MeshBasicMaterial({ color: '#dbe8fb' }));
   disc.rotation.x = -Math.PI / 2; disc.position.y = -0.01; scene.add(disc);
   const sc = document.createElement('canvas'); sc.width = sc.height = 128;
@@ -311,7 +241,7 @@ function create() {
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.0), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.set(0, 0.005, 0.05); scene.add(shadow);
 
-  function applyLabels(rig) {
+  function applyLabels() {
     if (!rig || !lastMap) return;
     rig.labels.sprites.forEach(s => lastMap[s.L.part] && drawLabel(s, lastMap[s.L.part]));
     Object.entries(rig.labels.pains).forEach(([p, o]) => {
@@ -325,31 +255,18 @@ function create() {
       m.color.set(i.color);
       m.emissive.set(i.glow ? '#ffb400' : '#000000'); m.emissiveIntensity = i.glow ? 0.35 : 0;
     });
-    applyLabels(rigs.toon); applyLabels(rigs.mannequin);
+    applyLabels();
   }
-  const show = name => { style = name; rigs.toon.group.visible = name === 'toon'; if (rigs.mannequin) rigs.mannequin.group.visible = name === 'mannequin'; };
-  show('toon');
-
-  let tweenTo = null;
   const api = {
-    el, onPick: null, update, get style() { return style; },
+    el, onPick: null, update, ready: null,
     setAutoRotate(v) { controls.autoRotate = v; },
     setView(v) { tweenTo = VIEW_AZ[v] ?? 0; controls.autoRotate = false; },
     screenPos(p) { const v = new THREE.Vector3(...p).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; },
-    async setStyle(name) {                            // 'toon' | 'mannequin' → 성공 여부
-      if (name === 'toon') { show('toon'); return true; }
-      if (!rigs.mannequin) {
-        if (!loading) {
-          el.classList.add('loading');
-          loading = buildMannequin().then(r => { rigs.mannequin = r; applyLabels(r); return true; })
-            .catch(e => { console.warn('mannequin load failed', e); return false; })
-            .finally(() => { el.classList.remove('loading'); loading = null; });
-        }
-        if (!(await loading)) return false;
-      }
-      show('mannequin'); return true;
-    },
   };
+  el.classList.add('loading');                        // 모델이 올 때까지 로딩 표시 (다른 그림은 보여주지 않음)
+  api.ready = buildMannequin()
+    .then(r => { rig = r; applyLabels(); el.classList.remove('loading'); return true; })
+    .catch(e => { console.warn('mannequin load failed', e); el.classList.remove('loading'); el.classList.add('failed'); return false; });
   controls.addEventListener('start', () => { controls.autoRotate = false; tweenTo = null; el.classList.add('touched'); });
 
   /* ---------- 상호작용 ---------- */
@@ -358,7 +275,7 @@ function create() {
     const r = renderer.domElement.getBoundingClientRect();
     ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    const rig = rigs[style];
+    if (!rig) return null;
     const h = ray.intersectObjects(rig.pickList(), false)[0];
     return h ? rig.partOf(h) : null;
   };
@@ -404,20 +321,17 @@ function create() {
       }
     }
     controls.update();
-    Object.entries(rigs).forEach(([name, rig]) => {
-      if (!rig) return;
-      const on = name === style;
+    if (rig) {
       rig.labels.sprites.forEach(({ sp, nz }) => {   // 카메라가 바라보는 면의 라벨만 보이게
-        if (!on) { sp.visible = false; return; }
         let o = 1;
         if (nz) { const to = camera.position.clone().sub(sp.position).normalize(); o = Math.min(1, Math.max(0, (to.z * nz - 0.25) / 0.45)); }
         sp.material.opacity = o; sp.visible = o > 0.02;
       });
       Object.values(rig.labels.pains).forEach(({ m, level }) => {
-        m.visible = on && level > 0;
-        if (m.visible) { const s = 1 + 0.35 * Math.sin(t * 5); m.scale.setScalar(s); m.material.opacity = 0.6 + 0.4 * Math.sin(t * 5); }
+        m.visible = level > 0;
+        if (m.visible) { const k = 1 + 0.35 * Math.sin(t * 5); m.scale.setScalar(k); m.material.opacity = 0.6 + 0.4 * Math.sin(t * 5); }
       });
-    });
+    }
     renderer.render(scene, camera);
   })();
   return api;
@@ -425,4 +339,4 @@ function create() {
 
 const api = create();
 window.Body3D = api;
-if (api) window.dispatchEvent(new Event('body3d-ready'));
+window.dispatchEvent(new Event(api ? 'body3d-ready' : 'body3d-failed'));
