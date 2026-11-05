@@ -54,16 +54,18 @@ const monthOf = ym => +ym.slice(5, 7);
 
 /* ---------- 데이터 ---------- */
 function seed() {
-  const ex = (part, name, unit, reps, sets) => ({ id: uid(), part, name, unit, monthDays: 8, perWeek: 2, reps, sets });
+  const ex = (part, name, unit, reps, sets, extra = {}) => ({ id: uid(), part, name, unit, monthDays: 8, perWeek: 2, reps, sets, ...extra });
   const pec = ex('chest', '팩덱플라이', '회', 10, 3);
   const vsq = ex('leg', '퓨어 브이스쿼트', '회', 10, 3);
   const lat = ex('back', '랫풀다운', '회', 15, 3);
   const run = ex('cardio', '런닝', '분', 20, 1);
+  const situp = ex('abs', '윗몸일으키기', '회', 30, 1, { repsOnly: true });
   const lg = (exId, date, weight, reps, sets, memo = '', dist = 0) => ({ id: uid(), date, exId, weight, reps, sets, pain: 0, memo, dist });
   return {
     v: 2,
     settings: { monthDays: 8, perWeek: 2 },
-    exercises: [pec, vsq, lat, run],
+    exercises: [pec, vsq, lat, run, situp],
+    added: { situp: true },
     logs: [
       lg(pec.id, '2026-10-22', 15, 10, 3), lg(pec.id, '2026-10-29', 15, 10, 3),
       lg(vsq.id, '2026-10-22', 20, 10, 3), lg(vsq.id, '2026-10-29', 20, 10, 4),
@@ -80,6 +82,12 @@ function migrate(o) {                                          // v1(누적 목�
     o.v = 2;
   }
   o.settings = { monthDays: 8, perWeek: 2, ...o.settings };
+  o.added = o.added || {};
+  if (!o.added.situp) {
+    o.added.situp = true;
+    if (!o.exercises.some(e => e.name === '윗몸일으키기'))
+      o.exercises.push({ id: uid(), part: 'abs', name: '윗몸일으키기', unit: '회', repsOnly: true, monthDays: o.settings.monthDays, perWeek: o.settings.perWeek, reps: 30, sets: 1 });
+  }
   // 런닝(분 단위) 기록: 예전에 메모에 적던 '2.5' / '2.75km' → 거리(km) 필드로 이관
   const isMin = id => o.exercises.find(e => e.id === id)?.unit === '분';
   o.logs.forEach(l => {
@@ -102,6 +110,7 @@ const save = () => localStorage.setItem(KEY, JSON.stringify(S));
 /* ---------- 계산 ---------- */
 const exOf = id => S.exercises.find(e => e.id === id);
 const unitOf = e => e ? e.unit : '회';
+const kindOf = e => e?.unit === '분' ? 'time' : e?.repsOnly ? 'reps' : 'sets';   // 시간형 / 횟수형 / 무게·세트형
 const target = e => e.monthDays * e.reps * e.sets;            // 분모: 월 목표일 × 회 × 세트
 const amount = l => l.reps * l.sets;                          // 분자: 기록 1건 = 회 × 세트
 const kmh = (km, min) => km > 0 && min > 0 ? km / (min / 60) : 0;
@@ -258,7 +267,8 @@ function calendarHTML() {
 }
 function logLine(l) {
   const e = exOf(l.exId), u = unitOf(e), p = PAIN[l.pain || 0];
-  const main = u === '분' ? `${l.reps}분${l.dist > 0 ? ` · ${fmtKm(l.dist)} · ${fmtSpeed(kmh(l.dist, l.reps))}` : ''}` : `${l.weight ? l.weight + 'kg · ' : ''}${l.reps}회 × ${l.sets}세트`;
+  const k = kindOf(e);
+  const main = k === 'time' ? `${l.reps}분${l.dist > 0 ? ` · ${fmtKm(l.dist)} · ${fmtSpeed(kmh(l.dist, l.reps))}` : ''}` : k === 'reps' ? `${l.reps}회` : `${l.weight ? l.weight + 'kg · ' : ''}${l.reps}회 × ${l.sets}세트`;
   return `<div class="logline"><span class="tag">${NAMES[e?.part] || '?'}</span>
     <span class="ln"><b>${esc(e?.name || '(삭제된 종목)')}</b><em>${main}${l.memo ? ` · ${esc(l.memo)}` : ''}</em></span>
     <i class="pd p${l.pain || 0}" title="${p.t}"></i><button class="link" data-edit="${l.id}">수정</button></div>`;
@@ -315,7 +325,7 @@ function drawRecord() {
   const C = compute(ym);
   const P = C.parts[rec.part];
   const list = S.exercises.filter(e => e.part === rec.part);
-  const e = exOf(rec.exId), u = unitOf(e);
+  const e = exOf(rec.exId), u = unitOf(e), kind = kindOf(e);
   dlg.innerHTML = `<form method="dialog" class="sheet" id="recForm">
     <div class="grab"></div>
     <div class="sheethead"><h2>${rec.editId ? '기록 수정' : '운동 기록'}</h2><button type="button" class="ibtn" data-close aria-label="닫기">${ic('close')}</button></div>
@@ -332,9 +342,9 @@ function drawRecord() {
     <label>운동 종목<select name="exId">${list.map(x => `<option value="${x.id}" ${x.id === rec.exId ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
     <label>운동 날짜<input type="date" name="date" value="${rec.date}" required></label>
     <div class="grid3">
-      ${u === '분' ? '' : `<label>무게(kg)<input type="number" name="weight" inputmode="decimal" step="0.5" min="0" value="${rec.weight}" placeholder="맨몸 0"></label>`}
-      <label>${u === '분' ? '시간(분)' : '세트당 횟수'}<input type="number" name="reps" inputmode="decimal" min="0.1" step="any" value="${rec.reps}" required></label>
-      ${u === '분' ? `<label>거리(km)<input type="number" name="dist" inputmode="decimal" min="0" step="any" value="${rec.dist}" placeholder="선택 입력"></label>` : `<label>세트 수<input type="number" name="sets" inputmode="numeric" min="1" step="1" value="${rec.sets}" required></label>`}
+      ${kind !== 'sets' ? '' : `<label>무게(kg)<input type="number" name="weight" inputmode="decimal" step="0.5" min="0" value="${rec.weight}" placeholder="맨몸 0"></label>`}
+      <label>${kind === 'time' ? '시간(분)' : kind === 'reps' ? '횟수' : '세트당 횟수'}<input type="number" name="reps" inputmode="decimal" min="0.1" step="any" value="${rec.reps}" required></label>
+      ${kind === 'reps' ? '' : u === '분' ? `<label>거리(km)<input type="number" name="dist" inputmode="decimal" min="0" step="any" value="${rec.dist}" placeholder="선택 입력"></label>` : `<label>세트 수<input type="number" name="sets" inputmode="numeric" min="1" step="1" value="${rec.sets}" required></label>`}
     </div>
     ${u === '분' ? `<p class="hint" id="speedHint">${speedHint(rec.reps, rec.dist)}</p>` : ''}
     <div class="lbl">운동 후 느낌</div>
@@ -374,10 +384,10 @@ dlg.addEventListener('submit', ev => {
   if (ev.target.id !== 'recForm') return;
   syncRec();
   const e = exOf(rec.exId); if (!e) return;
-  const u = unitOf(e);
+  const u = unitOf(e), kind = kindOf(e);
   const row = {
     id: rec.editId || uid(), date: rec.date, exId: rec.exId,
-    weight: u === '분' ? 0 : num(rec.weight), dist: u === '분' ? Math.max(0, num(rec.dist)) : 0, reps: num(rec.reps), sets: u === '분' ? 1 : Math.max(1, Math.round(num(rec.sets, 1))),
+    weight: kind === 'sets' ? num(rec.weight) : 0, dist: u === '분' ? Math.max(0, num(rec.dist)) : 0, reps: num(rec.reps), sets: kind === 'sets' ? Math.max(1, Math.round(num(rec.sets, 1))) : 1,
     pain: rec.pain, memo: String(rec.memo || '').trim(),
   };
   if (!row.date || row.reps <= 0) return ev.preventDefault();
@@ -417,11 +427,11 @@ function drawOptions() {
           <div class="ogrid">
             <label>월 목표일<input type="number" min="1" data-f="monthDays" value="${x.e.monthDays}"></label>
             <label>주당(일)<input type="number" min="1" max="7" data-f="perWeek" value="${x.e.perWeek}"></label>
-            <label>${x.e.unit === '분' ? '분' : '회/세트'}<input type="number" min="1" data-f="reps" value="${x.e.reps}"></label>
-            ${x.e.unit === '분' ? '<span></span>' : `<label>세트<input type="number" min="1" data-f="sets" value="${x.e.sets}"></label>`}
+            <label>${x.e.unit === '분' ? '분' : x.e.repsOnly ? '횟수/일' : '회/세트'}<input type="number" min="1" data-f="reps" value="${x.e.reps}"></label>
+            ${x.e.unit === '분' || x.e.repsOnly ? '<span></span>' : `<label>세트<input type="number" min="1" data-f="sets" value="${x.e.sets}"></label>`}
           </div>
           <small>${exSummary(x)}</small></div>`).join('') || '<p class="empty sm">등록된 종목 없음</p>'}
-        <div class="addex" data-addpart="${p.id}"><input placeholder="종목 이름" data-newname><select data-newunit><option>회</option><option>분</option></select>
+        <div class="addex" data-addpart="${p.id}"><input placeholder="종목 이름" data-newname><select data-newunit><option value="회">세트</option><option value="횟수">횟수</option><option value="분">시간</option></select>
           <button type="button" class="btn tint sm" data-addex>추가</button></div></div>`;
     }).join('')}
 
@@ -488,8 +498,9 @@ dlg.addEventListener('click', ev => {
   if (t.dataset.addex !== undefined) {
     const box = t.closest('[data-addpart]'), name = $('[data-newname]', box).value.trim();
     if (!name) return;
-    const unit = $('[data-newunit]', box).value;
-    S.exercises.push({ id: uid(), part: box.dataset.addpart, name, unit, monthDays: S.settings.monthDays, perWeek: S.settings.perWeek, reps: unit === '분' ? 20 : 10, sets: unit === '분' ? 1 : 3 });
+    const kindSel = $('[data-newunit]', box).value, unit = kindSel === '분' ? '분' : '회', repsOnly = kindSel === '횟수';
+    S.exercises.push({ id: uid(), part: box.dataset.addpart, name, unit, ...(repsOnly ? { repsOnly: true } : {}), monthDays: S.settings.monthDays, perWeek: S.settings.perWeek,
+      reps: unit === '분' ? 20 : repsOnly ? 30 : 10, sets: unit === '분' || repsOnly ? 1 : 3 });
     save(); drawOptions();
   }
   if (t.dataset.export !== undefined) {

@@ -161,7 +161,7 @@ input[type=date]{min-height:48px}
 .ogrid input{padding:0 4px;text-align:center;height:40px;background:#fff;border-radius:10px;font-weight:600}
 .addex{display:flex;gap:6px;margin-top:6px;padding-top:12px;border-top:1px solid #e5e8eb}
 .addex input{height:40px;background:#fff;border-radius:10px;flex:1}
-.addex select{width:72px;flex:none;height:40px;background-color:#fff;border-radius:10px;padding-left:12px;padding-right:28px;background-position:right 6px center}
+.addex select{width:84px;flex:none;height:40px;background-color:#fff;border-radius:10px;padding-left:12px;padding-right:28px;background-position:right 6px center}
 .addex .btn{height:40px}
 .filebtn{cursor:pointer;flex-direction:row}
 .sheet>*{flex-shrink:0}
