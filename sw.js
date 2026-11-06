@@ -1,5 +1,5 @@
 // MyFitness 서비스 워커: 앱 파일은 네트워크 우선(최신 반영) + 오프라인 폴백, CDN 자원(3D 라이브러리/모델/폰트)은 캐시 우선
-const SHELL_CACHE = 'mf-shell-v2';
+const SHELL_CACHE = 'mf-shell-v3';
 const CDN_CACHE = 'mf-cdn-v1';                       // 버전이 고정된 CDN URL만 쓰므로 영구 캐시
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'body3d.js', 'manifest.webmanifest',
   'favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
