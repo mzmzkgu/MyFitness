@@ -203,10 +203,10 @@ footer{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
 .herol{display:flex;flex-direction:column;min-width:0}
 .bignum{font-size:clamp(36px,11.5vw,46px);font-weight:800;letter-spacing:-.04em;line-height:1.1;margin-top:2px;white-space:nowrap}
 .bignum span{font-size:.55em;font-weight:700;margin-left:2px;color:var(--tx2)}
-.heror{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;min-width:0}
-.hrow{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
-.hrow .cap{font-size:clamp(11.5px,3.3vw,13px)}
-.hrow b{font-size:clamp(13.5px,4vw,16px);font-weight:800;letter-spacing:-.02em}
+.heror{display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;gap:3px;min-width:0;padding-bottom:5px}
+.hrow{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.hrow .cap{font-size:clamp(10px,2.8vw,11.5px)}
+.hrow b{font-size:clamp(11.5px,3.3vw,13.5px);font-weight:800;letter-spacing:-.02em}
 .hrow small{font-size:.82em;color:var(--mut);font-weight:600}
 .hrow.hit b{color:#04885a}.hrow.hit small{color:#4aa585}
 .hero .track{height:8px;border-radius:99px;background:var(--fill);overflow:hidden;margin-top:12px}
