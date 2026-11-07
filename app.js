@@ -210,16 +210,20 @@ function render() {
 
     <section class="card statusbox">
       <div class="sechead"><h2>부위별 현황</h2></div>
-      <div class="figcol"><div id="fig3d" class="fig3d${figFailed ? ' failed' : ' loading'}"><div class="load3d">모델 불러오는 중…</div><div class="fail3d">3D 모델을 불러오지 못했어요</div></div></div>
-      ${B3D && !figFailed ? '<div class="viewseg">' : '<div class="viewseg" hidden>'}<div class="seg">${views.map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div></div>
-      <div class="tiles">
-        ${PARTS.map(p => {
-          const x = C.parts[p.id], pn = painOf(p.id);
-          return `<button class="tile" data-part="${p.id}">
-            <span class="pt"><span class="pn">${p.name}${pn ? `<i class="pd p${pn}"></i>` : ''}</span></span>
-            <span class="pv${x.pct > 100 ? ' gold' : ''}">${fmtPct(x.pct)}</span>
-            <span class="pb"><span style="width:${Math.min(x.pct ?? 0, 100)}%;background:${barColor(x.pct ?? 0)}"></span></span></button>`;
-        }).join('')}
+      <div class="statgrid">
+        <div class="figside">
+          <div class="figcol"><div id="fig3d" class="fig3d${figFailed ? ' failed' : ' loading'}"><div class="load3d">모델 불러오는 중…</div><div class="fail3d">3D 모델을 불러오지 못했어요</div></div></div>
+          ${B3D && !figFailed ? '<div class="viewseg">' : '<div class="viewseg" hidden>'}<div class="seg">${views.map(([v, n]) => `<button class="${v === bodyView ? 'on' : ''}" data-view="${v}">${n}</button>`).join('')}</div></div>
+        </div>
+        <div class="tiles">
+          ${PARTS.map(p => {
+            const x = C.parts[p.id], pn = painOf(p.id);
+            return `<button class="tile" data-part="${p.id}">
+              <span class="pt"><span class="pn">${p.name}${pn ? `<i class="pd p${pn}"></i>` : ''}</span></span>
+              <span class="pv${x.pct > 100 ? ' gold' : ''}">${fmtPct(x.pct)}</span>
+              <span class="pb"><span style="width:${Math.min(x.pct ?? 0, 100)}%;background:${barColor(x.pct ?? 0)}"></span></span></button>`;
+          }).join('')}
+        </div>
       </div>
       <div class="legend"><span class="lgbar"><i></i></span><span>0%</span><span class="sp"></span><span>100%</span>
         <span class="sw gold"></span><span>초과달성</span><span class="pd p1"></span><span>살짝 아픔</span><span class="pd p2"></span><span>많이 아픔</span></div>

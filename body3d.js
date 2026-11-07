@@ -57,7 +57,7 @@ function create() {
   // specs: [{part,pos,w,nz,pill}] nz=라벨이 향하는 면(+1 앞, -1 뒤, 0 항상) / painSpecs: {part:[x,y,z]}
   function makeLabels(specs, painSpecs) {
     const sprites = specs.map(L => {
-      const cv = document.createElement('canvas'); cv.width = 256; cv.height = L.pill ? 96 : 128;
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 96;
       const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
       sp.position.set(...L.pos); sp.scale.set(L.w, L.w * cv.height / 256, 1);
@@ -78,12 +78,11 @@ function create() {
       g.fillStyle = i.color; g.beginPath(); g.roundRect(8, 8, cv.width - 16, cv.height - 16, 40); g.fill();
       g.fillStyle = i.ink; g.font = `700 36px ${FONT}`; g.fillText(`${PART_NAMES[L.part]}  ${i.pct}`, cv.width / 2, cv.height / 2 + 2);
     } else {
-      g.fillStyle = i.ink; g.font = `600 36px ${FONT}`; g.fillText(PART_NAMES[L.part], 128, 40);
-      g.font = `800 62px ${FONT}`; g.fillText(i.pct, 128, 92);
+      g.fillStyle = i.ink; g.font = `800 76px ${FONT}`; g.fillText(i.pct, 128, 50);   // 이름은 카드에 있으니 몸에는 숫자만
     }
     tex.needsUpdate = true;
   }
-  const CARDIO = { part: 'cardio', pos: [-1.35, 5.0, 0], w: 1.2, pill: true, nz: 0 };
+  const CARDIO = { part: 'cardio', pos: [-1.4, 5.0, 0], w: 1.55, pill: true, nz: 0 };
 
   /* ---------- 마네킹 (glTF, 뼈대 기반 부위 분류) ---------- */
   const boneGroup = name => {
@@ -209,7 +208,7 @@ function create() {
       }
       return zz === null ? null : [cx, cy, zz + sign * 0.07];
     };
-    const W2 = { shoulder: 0.72, chest: 0.95, abs: 0.85, back: 0.95, lowback: 0.85, arm: 0.72, leg: 0.88, calf: 0.72 };
+    const W2 = { shoulder: 0.82, chest: 1.1, abs: 1.0, back: 1.1, lowback: 1.0, arm: 0.82, leg: 1.0, calf: 0.82 };
     const specs = [], painSpecs = {};
     Object.keys(W2).forEach(part => {
       [1, -1].forEach(sign => {
