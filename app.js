@@ -195,6 +195,9 @@ function render() {
   };
   const tp = C.total.pct ?? 0;
   const infoMap = Object.fromEntries(PARTS.map(p => [p.id, info(p.id)]));
+  const painCnt = [0, 0, 0];                                      // 통증 정도별 부위 수
+  PARTS.forEach(p => { painCnt[painOf(p.id)]++; });
+  const overCnt = PARTS.filter(p => C.parts[p.id].pct > 100).length;
   const views = [['front', '앞'], ['side', '옆'], ['back', '뒤']];
   $('#app').innerHTML = `
     <section class="card hero">
@@ -225,8 +228,10 @@ function render() {
           }).join('')}
         </div>
       </div>
-      <div class="legend"><span class="lgbar"><i></i></span><span>0%</span><span class="sp"></span><span>100%</span>
-        <span class="sw gold"></span><span>초과달성</span><span class="pd p1"></span><span>살짝 아픔</span><span class="pd p2"></span><span>많이 아픔</span></div>
+      <div class="legend"><span class="lgt">통증 부위</span>
+        <span class="lgi"><i class="pd p1"></i>살짝 아픔 <b>${painCnt[1]}</b>곳</span>
+        <span class="lgi"><i class="pd p2"></i>많이 아픔 <b>${painCnt[2]}</b>곳</span>
+        ${overCnt ? `<span class="lgi"><i class="sw"></i>초과달성 <b>${overCnt}</b>곳</span>` : ''}</div>
     </section>
 
     <section class="card" id="calCard">${calendarHTML()}</section>

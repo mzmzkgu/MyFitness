@@ -82,7 +82,7 @@ function create() {
     }
     tex.needsUpdate = true;
   }
-  const CARDIO = { part: 'cardio', pos: [-1.4, 5.0, 0], w: 1.55, pill: true, nz: 0 };
+  const CARDIO = { part: 'cardio', pos: [0, 5.62, 0], w: 1.3, pill: true, nz: 0 };   // 머리 위 가운데
 
   /* ---------- 마네킹 (glTF, 뼈대 기반 부위 분류) ---------- */
   const boneGroup = name => {
@@ -297,7 +297,7 @@ function create() {
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
     const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    const dist = Math.max(3.3 / t, 2.1 / (t * camera.aspect));
+    const dist = Math.max(3.45 / t, 1.9 / (t * camera.aspect));
     const off = camera.position.clone().sub(controls.target).setLength(dist);
     camera.position.copy(controls.target).add(off);
   }

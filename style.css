@@ -68,10 +68,6 @@ footer{text-align:center;color:var(--mut);font-size:12px;padding:10px 0 32px}
 .pd{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;background:var(--green);flex:none}
 .pd.p1{background:var(--orange)}.pd.p2{background:var(--red)}.pd.p0{background:var(--green);opacity:.55;margin-left:0}
 .legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 6px;margin-top:12px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--mut)}
-.legend .pd{margin:0 0 0 8px}
-.lgbar{width:72px;height:8px;border-radius:99px;background:linear-gradient(90deg,#e9edf3,#cfe2ff 20%,#1d5fd0)}
-.lgbar i{display:none}.legend .sp{display:none}
-.sw{width:8px;height:8px;border-radius:2px;margin-left:8px;background:var(--gold)}
 
 /* 달력 */
 .calhead{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:10px}
@@ -178,13 +174,14 @@ input[type=date]{min-height:48px}
 /* 그림 아래: 앞/옆/뒤 + 부위 타일(3×3) */
 .viewseg{display:flex;justify-content:center;margin:8px 0 0}
 .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:6px;align-self:stretch}
-.tile{display:flex;flex-direction:column;justify-content:space-between;gap:2px;padding:9px 5px 8px 7px;border-radius:14px;background:#f7f8fa;text-align:left;min-width:0;transition:background .15s,transform .1s}
+.tile{container-type:inline-size;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;text-align:center;gap:2px;padding:8px 6px;border-radius:14px;background:#f7f8fa;text-align:left;min-width:0;transition:background .15s,transform .1s}
 .tile:active{background:var(--ac-bg);transform:scale(.97)}
-.tile .pn{font-size:11.5px;color:var(--tx2);white-space:nowrap}
+.tile .pt{justify-content:center}
+.tile .pn{font-size:clamp(9px,19cqw,13px);color:var(--tx2);white-space:nowrap;font-weight:600}
 .tile .pd{margin-left:3px;width:7px;height:7px}
-.tile .pv{font-size:13.5px;font-weight:800;letter-spacing:-.04em;margin:2px 0 4px;white-space:nowrap}
-.tile .pb{height:4px;background:#e5e8eb}
-.fig3d{aspect-ratio:1/1.45}
+.tile .pv{font-size:clamp(11px,24cqw,17px);font-weight:800;letter-spacing:-.04em;margin:0;white-space:nowrap}
+.tile .pb{height:4px;background:#e5e8eb;align-self:stretch}
+.fig3d{aspect-ratio:1/1.76}
 
 .fig3d.loading .hint3d,.fig3d.failed .hint3d{display:none}
 .fail3d{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--mut);font-size:13px;font-weight:600;display:none}
@@ -198,7 +195,13 @@ footer{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
 @media (display-mode:standalone){html{overscroll-behavior-y:contain}}
 
 /* 마네킹(왼쪽) | 부위 타일 3×3(오른쪽) */
-.statgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:8px;align-items:stretch;margin-top:4px}
+.statgrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.2fr);gap:8px;align-items:stretch;margin-top:4px}
 .figside{min-width:0}
-@media (max-width:385px){.tile .pn{font-size:10.5px}.tile .pd{margin-left:2px;width:6px;height:6px}.tile{padding-left:6px}}
 .fail3d{width:86%;text-align:center;font-size:12px;line-height:1.45}
+
+.legend{justify-content:center;gap:6px 14px;font-size:13px;color:var(--tx2)}
+.legend .lgt{color:var(--mut);font-weight:600}
+.legend .lgi{display:inline-flex;align-items:center;gap:5px}
+.legend .lgi b{color:var(--tx);font-weight:800}
+.legend .pd{margin:0}
+.legend .sw{width:8px;height:8px;border-radius:2px;background:var(--gold);display:inline-block}
