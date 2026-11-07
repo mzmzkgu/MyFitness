@@ -187,6 +187,9 @@ useB3D();
 window.addEventListener('body3d-ready', () => { useB3D(); render(); });
 window.addEventListener('body3d-failed', () => { figFailed = true; render(); });
 
+// 운동한 날 / 목표일 (달성률) — 목표를 채우면 초록색
+const dayStat = (label, done, goal) => `<div class="hrow${done >= goal ? ' hit' : ''}"><span class="cap">${label}</span><b>${done} / ${goal}일 <small>(${goal ? Math.round(done / goal * 100) : 0}%)</small></b></div>`;
+
 function render() {
   const C = compute();
   const info = part => {
@@ -201,18 +204,20 @@ function render() {
   const views = [['front', '앞'], ['side', '옆'], ['back', '뒤']];
   $('#app').innerHTML = `
     <section class="card hero">
-      <div class="herotop"><span class="cap">${monthOf(C.ym)}월 운동 진행도</span><span class="cap">매월 1일 초기화</span></div>
-      <div class="bignum${tp > 100 ? ' gold' : ''}">${C.total.pct == null ? '–' : fmtPct(C.total.pct).replace('%', '')}<span>%</span></div>
-      <div class="track"><span style="width:${Math.min(tp, 100)}%;background:${barColor(tp)}"></span></div>
-      <div class="stats">
-        <div><span class="cap">운동일</span><b>${C.days}<small>/${S.settings.monthDays}일</small></b></div>
-        <div><span class="cap">이번 주</span><b>${C.weekDays}<small>/${S.settings.perWeek}일</small></b></div>
-        <div><span class="cap">기록</span><b>${C.count}<small>건</small></b></div>
+      <div class="herorow">
+        <div class="herol">
+          <span class="cap">${monthOf(C.ym)}월 운동 진행도</span>
+          <div class="bignum${tp > 100 ? ' gold' : ''}">${C.total.pct == null ? '–' : fmtPct(C.total.pct).replace('%', '')}<span>%</span></div>
+        </div>
+        <div class="heror">
+          ${dayStat('이번 달 운동', C.days, S.settings.monthDays)}
+          ${dayStat('이번 주 운동', C.weekDays, S.settings.perWeek)}
+        </div>
       </div>
+      <div class="track"><span style="width:${Math.min(tp, 100)}%;background:${barColor(tp)}"></span></div>
     </section>
 
     <section class="card statusbox">
-      <div class="sechead"><h2>부위별 현황</h2></div>
       <div class="statgrid">
         <div class="figside">
           <div class="figcol"><div id="fig3d" class="fig3d${figFailed ? ' failed' : ' loading'}"><div class="load3d">모델 불러오는 중…</div><div class="fail3d">3D 모델을 불러오지 못했어요</div></div></div>
